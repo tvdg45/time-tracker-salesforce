@@ -1,0 +1,234 @@
+<apex:page docType="html-5.0" Controller="TimeTrackerTaskController" title="Show tasks">
+    <style>
+        #message img, #thread img { width: 96%; margin-left: 1%; margin-right: 1%; }
+        #thread img { width: 98%; margin-left: 1%; margin-right: 1%; }
+        label, input, select, input[type="button"], #message, textarea { font-size: 12pt; }
+        label { color: black; }
+        #message[contentEditable=false]:hover, #message[contentEditable=false] label:hover { cursor: not-allowed; }
+        input[type="text"], select, #message, textarea { background: white; border: 2px solid; border-color: #5A403B; }
+        input[type="button"] { background: #5A403B; color: white; padding: 4px 3px; font-weight: bold; border: 2px solid; border-color: #5A403B; border-radius: 3px; }
+        input[type="button"]:hover, input[type="button"]:focus { background: #512600; color: white; padding: 4px 3px; font-weight: bold; border: 2px solid; border-color: #512600; border-radius: 3px; cursor: pointer; }
+        input[type="button"]:disabled { cursor: not-allowed; padding: 4px 3px; font-weight: bold; border-radius: 3px; }
+        a { color: #512600; text-decoration: none; }
+        a:visited { color: #512600; text-decoration: none; }
+        a:hover, a:focus { cursor: pointer; color: #5A403B; text-decoration: underline; }
+        label:hover { cursor: text; }
+    </style>
+    <script type="text/javascript" src="https://www.timothysdigitalsolutions.com/backstretch/js/jquery-3.2.1.js"></script>
+    <script type="text/javascript" src="https://www.timothysdigitalsolutions.com/backstretch/js/jquery.min.js"></script>
+    <script type="text/javascript" src="https://www.timothysdigitalsolutions.com/backstretch/js/jquery.backstretch.js"></script>
+    <script>
+        $(document).ready(function() {
+            
+            $("#task_list").fadeIn();
+        });
+    
+        function new_task() {
+            
+            $("#task_list").fadeOut();
+            $("#create_task_prompt").fadeIn();
+        }
+    
+        function view_tasks() {
+            
+            $("#create_task_prompt").fadeOut();
+            $("#task_list").fadeIn();
+        }
+    
+        function get_raw_minute() {
+            
+            var today_date = new Date();
+            var raw_minute = parseInt((today_date.getTime() / 1000) / 60);
+            
+            return raw_minute;
+        }
+    
+        function add_task() {
+            
+            addTask($("#task_category").val(), $("#task_name").val(), $("#task_description").val(), get_raw_minute());
+        }
+    </script>
+    <div style="text-align: left; width: 99%; margin-left: 0.5%; margin-right: 0.5%; margin-top: auto; margin-bottom: auto">
+        <div id="create_task_prompt" style="display: none;">
+            <div style="text-align: left; width: 100%">
+                <input type="button" name="view_tasks" id="view_tasks" onclick="view_tasks()" value="View tasks" />
+            </div>
+            <div style="text-align: left; width: 100%"><br />
+                <label>Task category: *</label>
+            </div>
+            <div style="text-align: left; width: 100%">
+                <select id="task_category" style="width: 98%">
+                </select>
+            </div>
+            <div style="text-align: left; width: 100%"><br />
+                <label>Task name:</label>
+            </div>
+            <div style="text-align: left; width: 100%">
+                <input type="text" id="task_name" style="width: 98%" />
+            </div>
+            <div style="text-align: left; width: 100%"><br />
+                <label>Task description:</label>
+            </div>
+            <div style="text-align: left; width: 100%">
+                <textarea id="task_description" style="width: 98%; height: 100px"></textarea>
+            </div>
+            <div style="text-align: left; width: 100%"><br />
+                <input type="button" name="add_task" id="add_task" onclick="add_task()" value="Add task" />
+            </div>
+            <div style="text-align: left; width: 100%">
+                <div id="create_task"></div>
+            </div>
+        </div>
+        <div id="task_list" style="display: none;">
+            <div style="text-align: left; width: 100%">
+                <input type="button" name="new_task" id="new_task" onclick="new_task()" value="New task" />
+            </div>
+            <div style="text-align: left; width: 100%">
+                <input type="hidden" name="my_task_categories" id="my_task_categories" value="{!requestTaskCategories}" />
+                <input type="hidden" name="my_tasks" id="my_tasks" value="{!requestTasks}" />
+                <div id="task_content"></div>
+                <script>
+                    var task_category_content = "";
+                    var task_content = "";
+                    var each_task_category;
+                    var each_task;
+                    var all_tasks;
+                    var number_of_selected_tasks = 0;
+                    var all_selected_tasks = "";
+                    var my_task_categories = "";
+                    var my_tasks = "";
+                
+                    my_task_categories = document.getElementById("my_task_categories").value;
+                    my_tasks = document.getElementById("my_tasks").value;
+                    
+                    task_category_content += "<option value=\"Select category\">Select category</option>";
+                
+                    if (my_task_categories != "no task categories") {
+                        
+                        each_task_category = JSON.parse(my_task_categories);
+                        
+                        for (var i = 0; i < each_task_category.length; i++) {
+                            
+                            task_category_content += "<option value=\"" + each_task_category[i]["row_id"] + "\">" + each_task_category[i]["task_category_name"] + "</option>";
+                        }
+                    }
+                
+                    document.getElementById("task_category").innerHTML = task_category_content;
+                
+                    if (my_tasks != "no tasks") {
+                        
+                        each_task = JSON.parse(my_tasks);
+                        
+                        if (each_task.length > 0) {
+                            
+                            task_content += "<div style='text-align: left; width: 100%'>";
+                            task_content += "<br /><input type='button' name='delete_selected' id='delete_selected' onclick='erase_selected()' value='Delete selected' />";
+                            task_content += "</div>";
+                        }
+                        
+                        if (each_task.length > 0) {
+                            
+                            task_content += "<div style='text-align: left; width: 100%'>";
+                            task_content += "<div id='delete_tasks'></div>";
+                            task_content += "</div>";
+                        }
+                        
+                        for (var i = 0; i < each_task.length; i++) {
+                            
+                            task_content += "<div style='text-align: left; padding-top: 10px; padding-bottom: 10px; word-wrap: break-word'>";
+                            task_content += "<div style='text-align: left; width: 100%'>";
+                            task_content += "<input type='checkbox' name='select_task' class='select_task' value='" + each_task[i]["row_id"] + "' />";
+                            task_content += "<label><b>Name:</b> " + each_task[i]["task_name"] + "</label>";
+                            task_content += "</div>";
+                            task_content += "<div style='text-align: left; width: 100%'>";
+                            task_content += "<label><b>Description:</b> " + each_task[i]["description"] + "</label>";
+                            task_content += "</div>";
+                            task_content += "<div style='text-align: left; width: 100%'>";
+                            task_content += "<label><b>Task started: </b> " + each_task[i]["date_received"] + "</label>";
+                            task_content += "</div>";
+                            
+                            if (each_task[i]["time_stopped"] == "0" || each_task[i]["time_stopped"].replace(/\s/g, "").length == 0) {
+                                
+                                task_content += "<div style='text-align: left; width: 100%'>";
+                                task_content += "<input type='button' class='finish_task' value='Finish task' onclick='finish_task(\"" + each_task[i]['row_id'] + "\")' />";
+                                task_content += "</div>";
+                            } else {
+                                
+                                if (each_task[i]["total_time"] == 1) {
+                                    
+                                    task_content += "<div style='text-align: left; width: 100%'>";
+                                    task_content += "<label><b>Total time: </b> " + each_task[i]["total_time"] + " minute</label>";
+                                    task_content += "</div>";
+                                } else {
+                                    
+                                    task_content += "<div style='text-align: left; width: 100%'>";
+                                    task_content += "<label><b>Total time: </b> " + each_task[i]["total_time"] + " minutes</label>";
+                                    task_content += "</div>";
+                                }
+                            }
+                            
+                            task_content += "</div>";
+                        }
+                    } else {
+                        
+                        task_content += "<div style='text-align: left; padding-top: 20px; padding-bottom: 20px; word-wrap: break-word'>";
+                        task_content += "<label>You have no unsaved tasks.</label>";
+                        task_content += "</div>";
+                    }
+                
+                    document.getElementById("task_content").innerHTML = task_content;
+                
+                    function finish_task(task_id) {
+                       
+                        finishTask(task_id, get_raw_minute());
+                    }
+                
+                    function erase_selected() {
+                        
+                        all_tasks = document.getElementsByName('select_task').length;
+                        
+                        for (var i = 0; i < all_tasks; i++) {
+                            
+                            if (document.getElementsByName('select_task')[i].checked) {
+                                
+                                all_selected_tasks += document.getElementsByName('select_task')[i].value + ",";
+                                number_of_selected_tasks++;
+                            }
+                        }
+                        
+                        all_selected_tasks += "{}";
+                        
+                        if (number_of_selected_tasks > 0) {
+                            
+                            all_selected_tasks = all_selected_tasks.replace(/,{}/g, "");
+                        } else {
+                            
+                            all_selected_tasks = all_selected_tasks.replace(/{}/g, "");
+                        }
+                        
+                        eraseSelected(all_selected_tasks);
+                        
+                        number_of_selected_tasks = 0;
+                        all_selected_tasks = "";
+                    }
+                </script>
+            </div>
+        </div>
+    </div>
+    <apex:form >
+        <apex:actionFunction name="addTask" action="{!controlCreateTask}" reRender="formFeedback">
+            <apex:param id="taskCategory" name="taskCategory" value="" />
+            <apex:param id="taskName" name="taskName" value="" />
+            <apex:param id="taskDescription" name="taskDescription" value="" />
+            <apex:param id="timeStarted" name="timeStarted" value="" />
+        </apex:actionFunction>
+        <apex:actionFunction name="finishTask" action="{!controlFinishSelectedTask}" reRender="formFeedback">
+            <apex:param id="taskId" name="taskId" value="" />
+            <apex:param id="timeStopped" name="timeStopped" value="" />
+        </apex:actionFunction>
+        <apex:actionFunction name="eraseSelected" action="{!controlDeleteSelectedTasks}" reRender="formFeedback">
+            <apex:param id="selectedTasks" name="selectedTasks" value="" />
+        </apex:actionFunction>
+        <apex:outputText id="formFeedback" value="{!formFeedback}" escape="false"></apex:outputText>
+    </apex:form>
+</apex:page>
