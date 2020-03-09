@@ -1,0 +1,31 @@
+<apex:page docType="html-5.0" standardController="TimeTrackerTaskCategory__c" recordSetVar="timeTrackerTaskCategories" extensions="TaskCategoryPaginationExtension" action="{!loadTaskCategories}" title="Show task categories">
+    <style>
+        label, input, input[type="submit"] { font-size: 12pt; }
+        label { color: black; }
+        input[type="submit"] { background: #5A403B; color: white; border: 2px solid; border-color: #5A403B; }
+        input[type="submit"]:hover, input[type="submit"]:focus { background: #512600; color: white; border: 2px solid; border-color: #512600; cursor: pointer; }
+        input[type="submit"]:disabled { cursor: not-allowed; }
+        a { color: #512600; text-decoration: none; }
+        a:visited { color: #512600; text-decoration: none; }
+        a:hover, a:focus { cursor: pointer; color: #5A403B; text-decoration: underline; }
+        label:hover { cursor: text; }
+    </style>
+    <apex:form >
+        <apex:commandButton action="{!setTaskCategoryPages.previous}" value="< Previous" disabled="{!NOT(setTaskCategoryPages.hasPrevious)}" />
+        <apex:commandButton action="{!setTaskCategoryPages.next}" value="Next >" disabled="{!NOT(setTaskCategoryPages.hasNext)}" />
+        <apex:commandButton action="{!deleteTaskCategory}" value="Delete" />
+        <br />
+        <apex:outputText value="{!deleteTaskCategoryFeedback}" style="font-size: 12pt; font-weight: bold" escape="false"></apex:outputText>
+        
+        <apex:repeat value="{!showTaskCategories}" var="eachTaskCategory">
+            <div style="padding-top: 10px">
+                <input value="{!eachTaskCategory.Id}" type="checkbox" name="{!eachTaskCategory.Id}" /> <label><b>Category:</b> <a href="../lightning/r/TimeTrackerTaskCategory__c/{!eachTaskCategory.Id}/view">{!eachTaskCategory.Name}</a></label><br /><br />
+            </div>
+        </apex:repeat>
+        
+        <apex:outputText value="{!noTaskCategoriesMessage}" style="font-size: 12pt; font-weight: bold" escape="false"></apex:outputText>
+        <apex:commandButton action="{!setTaskCategoryPages.previous}" value="< Previous" disabled="{!NOT(setTaskCategoryPages.hasPrevious)}" />
+        <apex:commandButton action="{!setTaskCategoryPages.next}" value="Next >" disabled="{!NOT(setTaskCategoryPages.hasNext)}" />
+        <apex:commandButton action="{!deleteTaskCategory}" value="Delete" />
+    </apex:form>
+</apex:page>
